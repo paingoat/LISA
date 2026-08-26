@@ -2,6 +2,10 @@ import argparse
 import os
 import sys
 
+from utils.hf_env import load_runtime_env
+
+load_runtime_env()
+
 import cv2
 import numpy as np
 import torch

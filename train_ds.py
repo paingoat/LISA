@@ -5,6 +5,10 @@ import sys
 import time
 from functools import partial
 
+from utils.hf_env import load_runtime_env
+
+load_runtime_env()
+
 import deepspeed
 import numpy as np
 import torch

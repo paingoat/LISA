@@ -3,6 +3,10 @@ import os
 import re
 import sys
 
+from utils.hf_env import load_runtime_env
+
+load_runtime_env()
+
 import bleach
 import cv2
 import gradio as gr

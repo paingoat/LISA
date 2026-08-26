@@ -127,9 +127,30 @@ For more details, please refer to the [paper](https://arxiv.org/abs/2308.00692).
 <p align="center"> <img src="imgs/table1.jpg" width="80%"> </p>
 
 ## Installation
-```
+
+Use a **Miniconda Python 3.10** env. The original pins are `torch==1.13.1+cu117` and `transformers==4.31.0`; those wheels do not exist for the RunPod image Python (3.12 + PyTorch 2.8). A CUDA 12.8 driver can still run the cu117 runtime, so keep the original stack instead of upgrading PyTorch.
+
+```bash
+# Persist conda on the RunPod volume (optional but recommended)
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh -b -p /workspace/miniconda3
+eval "$(/workspace/miniconda3/bin/conda shell.bash hook)"
+conda create -n lisa python=3.10 -y
+conda activate lisa
+
+# Keep the git repo in a subfolder so HF_HOME=/workspace (hub/, datasets/)
+# does not mix cache files with source.
+cd /workspace/LISA
+cp .env.example .env
 pip install -r requirements.txt
-pip install flash-attn --no-build-isolation
+```
+
+`chat.py` does **not** need `flash-attn`. That package is only used by LLaVA's `train_mem.py`. Training additionally needs DeepSpeed (`pip install deepspeed==0.9.5 tensorboard`).
+
+13B bf16 inference needs about 30 GB VRAM. An A40 48 GB is enough. The Hub checkpoint is ~54 GB of fp32 shards; first download lands under `$HF_HOME/hub` (default `/workspace/hub`).
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python chat.py --version='xinlai/LISA-13B-llama2-v1' --precision='bf16'
 ```
 
 ## Training

@@ -1,23 +1,53 @@
+# Target: Miniconda Python 3.10 on the RunPod host (A40, driver CUDA 12.8).
+# Do not install into the image base env (PyTorch 2.8 / Python 3.12): torch 1.13.1
+# has no wheels there and would conflict with the template.
+#
+# CUDA 12.8 drivers run the cu117 wheels (driver backward compatibility).
 --extra-index-url https://download.pytorch.org/whl/cu117
 torch==1.13.1
 torchvision==0.14.1
-packaging
-sentencepiece
+
+# Keep the original LISA Llama/LLaVA APIs. Newer transformers change
+# LlamaModel.forward, generate() hidden_states, and use_cache behavior.
+transformers==4.31.0
+tokenizers==0.13.3
+# transformers 4.31 allows huggingface-hub<1.0, which now resolves to 0.26+
+# and removes cached_download. Pin a Hub client from the 4.31 era.
+huggingface-hub>=0.19.4,<0.23.0
+# Required by from_pretrained(..., low_cpu_mem_usage=True) in chat.py.
+# Also keeps peak CPU RAM down when loading the ~54 GB fp32 LISA shards.
+accelerate==0.21.0
+safetensors>=0.3.1,<0.5.0
 peft==0.4.0
+sentencepiece>=0.1.99
+python-dotenv>=1.0.0,<2.0.0
+
+# 4bit/8bit only. Unused for bf16 chat. The 0.41.1 wheel is py3-none-any.
+bitsandbytes==0.41.1
+
 einops==0.4.1
-fastapi==0.100.1
-gradio==3.39.0
-markdown2==2.4.10
 numpy==1.24.2
-openai==0.27.8
-opencv_python==4.8.0.74
+scipy==1.11.2
+# Headless avoids libGL.so.1 errors on typical GPU pods. cv2 API is unchanged.
+opencv-python-headless==4.8.0.74
 Pillow==9.4.0
 pycocotools==2.0.6
-ray==2.6.1
+
+# Gradio 3.39 / FastAPI 0.100 require Pydantic v1.
+pydantic>=1.10.13,<2.0.0
+fastapi==0.100.1
+gradio==3.39.0
+bleach>=6.0.0,<7.0.0
+markdown2==2.4.10
+openai==0.27.8
 Requests==2.31.0
 shortuuid==1.0.11
 tqdm==4.64.1
-transformers==4.31.0
 uvicorn==0.23.2
-scipy==1.11.2
-bitsandbytes==0.41.1
+ray==2.6.1
+packaging
+
+# Training-only (not required for chat.py --precision=bf16):
+#   pip install deepspeed==0.9.5 tensorboard
+# flash-attn is only used by LLaVA train_mem.py, not by chat.py / train_ds.py.
+# Skip it unless you need that entrypoint (it must be compiled against torch 1.13).
