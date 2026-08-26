@@ -145,7 +145,13 @@ cp .env.example .env
 pip install -r requirements.txt
 ```
 
-`chat.py` does **not** need `flash-attn`. That package is only used by LLaVA's `train_mem.py`. Training additionally needs DeepSpeed (`pip install deepspeed==0.9.5 tensorboard`).
+`chat.py --precision=bf16` does **not** need `flash-attn` or `bitsandbytes`. `flash-attn` is only used by LLaVA's `train_mem.py`. Training additionally needs DeepSpeed (`pip install deepspeed==0.9.5 tensorboard`).
+
+If you already installed `bitsandbytes==0.41.1`, uninstall it before running chat (accelerate imports it at load time and the CUDA 11.7 binary cannot find `libcusparse.so.11` on this image):
+
+```bash
+pip uninstall -y bitsandbytes
+```
 
 13B bf16 inference needs about 30 GB VRAM. An A40 48 GB is enough. The Hub checkpoint is ~54 GB of fp32 shards; first download lands under `$HF_HOME/hub` (default `/workspace/hub`).
 

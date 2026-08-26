@@ -22,9 +22,6 @@ peft==0.4.0
 sentencepiece>=0.1.99
 python-dotenv>=1.0.0,<2.0.0
 
-# 4bit/8bit only. Unused for bf16 chat. The 0.41.1 wheel is py3-none-any.
-bitsandbytes==0.41.1
-
 einops==0.4.1
 numpy==1.24.2
 scipy==1.11.2
@@ -49,5 +46,6 @@ packaging
 
 # Training-only (not required for chat.py --precision=bf16):
 #   pip install deepspeed==0.9.5 tensorboard
+# 4bit/8bit only. Do NOT install bitsandbytes==0.41.1 on CUDA 12.8: it loads
+# libbitsandbytes_cuda117.so and then fails looking for libcusparse.so.11.
 # flash-attn is only used by LLaVA train_mem.py, not by chat.py / train_ds.py.
-# Skip it unless you need that entrypoint (it must be compiled against torch 1.13).

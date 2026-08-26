@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
-from transformers import AutoTokenizer, BitsAndBytesConfig, CLIPImageProcessor
+from transformers import AutoTokenizer, CLIPImageProcessor
 
 from model.LISA import LISAForCausalLM
 from model.llava import conversation as conversation_lib
@@ -90,30 +90,33 @@ def main(args):
         torch_dtype = torch.half
 
     kwargs = {"torch_dtype": torch_dtype}
-    if args.load_in_4bit:
-        kwargs.update(
-            {
-                "torch_dtype": torch.half,
-                "load_in_4bit": True,
-                "quantization_config": BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_compute_dtype=torch.float16,
-                    bnb_4bit_use_double_quant=True,
-                    bnb_4bit_quant_type="nf4",
-                    llm_int8_skip_modules=["visual_model"],
-                ),
-            }
-        )
-    elif args.load_in_8bit:
-        kwargs.update(
-            {
-                "torch_dtype": torch.half,
-                "quantization_config": BitsAndBytesConfig(
-                    llm_int8_skip_modules=["visual_model"],
-                    load_in_8bit=True,
-                ),
-            }
-        )
+    if args.load_in_4bit or args.load_in_8bit:
+        from transformers import BitsAndBytesConfig
+
+        if args.load_in_4bit:
+            kwargs.update(
+                {
+                    "torch_dtype": torch.half,
+                    "load_in_4bit": True,
+                    "quantization_config": BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_compute_dtype=torch.float16,
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_quant_type="nf4",
+                        llm_int8_skip_modules=["visual_model"],
+                    ),
+                }
+            )
+        else:
+            kwargs.update(
+                {
+                    "torch_dtype": torch.half,
+                    "quantization_config": BitsAndBytesConfig(
+                        llm_int8_skip_modules=["visual_model"],
+                        load_in_8bit=True,
+                    ),
+                }
+            )
 
     model = LISAForCausalLM.from_pretrained(
         args.version, low_cpu_mem_usage=True, vision_tower=args.vision_tower, seg_token_idx=args.seg_token_idx, **kwargs
