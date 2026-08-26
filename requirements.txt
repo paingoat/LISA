@@ -1,23 +1,49 @@
---extra-index-url https://download.pytorch.org/whl/cu117
-torch==1.13.1
-torchvision==0.14.1
-packaging
-sentencepiece
+# Target stack: runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
+# (PyTorch 2.4.0 + CUDA 12.4 is already in the image.)
+#
+# Do not restore the original torch==1.13.1+cu117 pins: pip would replace the
+# image CUDA 12.4 build. The ranges below only keep the preinstalled wheels.
+torch>=2.4.0,<2.5.0
+torchvision>=0.19.0,<0.20.0
+
+# Keep the original LISA Llama/LLaVA APIs. Newer transformers change
+# LlamaModel.forward, generate() hidden_states, and use_cache behavior.
+transformers==4.31.0
+tokenizers==0.13.3
+huggingface-hub>=0.19.4,<0.23.0
+accelerate==0.21.0
+safetensors>=0.3.1,<0.5.0
 peft==0.4.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0,<5.0.0
+python-dotenv>=1.0.0
+
+# 0.41.1 has no CUDA 12.4 kernels. 0.43.3 is the drop-in BitsAndBytesConfig
+# backend for --load_in_8bit / --load_in_4bit. Unused for bf16 chat.
+bitsandbytes==0.43.3
+
 einops==0.4.1
+numpy>=1.24.2,<2.0.0
+scipy>=1.11.2,<1.13.0
+opencv-python-headless>=4.8.0.74,<4.9.0
+Pillow>=9.4.0,<11.0.0
+pycocotools>=2.0.6,<2.1.0
+
+# Gradio 3.39 requires Pydantic v1. Do not let pip pull pydantic 2.x.
+pydantic>=1.10.13,<2.0.0
 fastapi==0.100.1
 gradio==3.39.0
+bleach>=6.0.0
 markdown2==2.4.10
-numpy==1.24.2
 openai==0.27.8
-opencv_python==4.8.0.74
-Pillow==9.4.0
-pycocotools==2.0.6
-ray==2.6.1
 Requests==2.31.0
 shortuuid==1.0.11
 tqdm==4.64.1
-transformers==4.31.0
 uvicorn==0.23.2
-scipy==1.11.2
-bitsandbytes==0.41.1
+ray>=2.6.1,<2.7.0
+packaging
+
+# Training-only (not required for chat.py). Install when needed:
+#   pip install deepspeed==0.14.4 tensorboard
+# flash-attn is not used by chat.py / train_ds.py. If you need LLaVA train_mem.py:
+#   MAX_JOBS=2 pip install "flash-attn>=2.5.8,<2.7" --no-build-isolation

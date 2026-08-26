@@ -2,6 +2,10 @@ import argparse
 import os
 import sys
 
+from utils.hf_env import load_runtime_env
+
+load_runtime_env()
+
 import cv2
 import numpy as np
 import torch
@@ -128,18 +132,9 @@ def main(args):
     elif (
         args.precision == "fp16" and (not args.load_in_4bit) and (not args.load_in_8bit)
     ):
-        vision_tower = model.get_model().get_vision_tower()
-        model.model.vision_tower = None
-        import deepspeed
-
-        model_engine = deepspeed.init_inference(
-            model=model,
-            dtype=torch.half,
-            replace_with_kernel_inject=True,
-            replace_method="auto",
-        )
-        model = model_engine.module
-        model.model.vision_tower = vision_tower.half().cuda()
+        # Original code used DeepSpeed kernel injection here. That API is broken
+        # on current DeepSpeed/PyTorch 2.4, so use the same eager cast as bf16.
+        model = model.half().cuda()
     elif args.precision == "fp32":
         model = model.float().cuda()
 

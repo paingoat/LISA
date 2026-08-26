@@ -127,9 +127,32 @@ For more details, please refer to the [paper](https://arxiv.org/abs/2308.00692).
 <p align="center"> <img src="imgs/table1.jpg" width="80%"> </p>
 
 ## Installation
-```
+
+This fork is pinned for **Python 3.11 + PyTorch 2.4 + CUDA 12.4** (e.g. `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04`). The original `torch==1.13.1+cu117` pins are intentionally not restored: they would overwrite the image CUDA 12.4 wheels. **transformers stays at 4.31.0** so Llama/`generate()` behavior matches the original LISA code.
+
+```bash
+# Hugging Face cache lives at $HF_HOME/hub (default in .env.example: /workspace/hub)
+cp .env.example .env
+
 pip install -r requirements.txt
-pip install flash-attn --no-build-isolation
+```
+
+`chat.py` does **not** need `flash-attn`. That package is only used by LLaVA's `train_mem.py`. If you need it, compile with a low job count so 50 GB RAM is not exhausted:
+
+```bash
+MAX_JOBS=2 pip install "flash-attn>=2.5.8,<2.7" --no-build-isolation
+```
+
+Training additionally needs DeepSpeed (not required for inference):
+
+```bash
+pip install deepspeed==0.14.4 tensorboard
+```
+
+13B bf16 inference needs about 30 GB VRAM. An A40 48 GB is enough:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python chat.py --version='xinlai/LISA-13B-llama2-v1' --precision='bf16'
 ```
 
 ## Training

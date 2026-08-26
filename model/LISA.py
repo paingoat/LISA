@@ -360,6 +360,7 @@ class LISAForCausalLM(LlavaLlamaForCausalLM):
                 num_beams=1,
                 output_hidden_states=True,
                 return_dict_in_generate=True,
+                use_cache=False,
             )
             output_hidden_states = outputs.hidden_states[-1]
             output_ids = outputs.sequences

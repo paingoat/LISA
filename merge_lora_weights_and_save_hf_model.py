@@ -3,6 +3,10 @@ import glob
 import os
 import sys
 
+from utils.hf_env import load_runtime_env
+
+load_runtime_env()
+
 import cv2
 import numpy as np
 import torch
@@ -143,7 +147,7 @@ def main(args):
 
     model.resize_token_embeddings(len(tokenizer))
 
-    state_dict = torch.load(args.weight, map_location="cpu")
+    state_dict = torch.load(args.weight, map_location="cpu", weights_only=False)
     model.load_state_dict(state_dict, strict=True)
 
     model = model.merge_and_unload()
