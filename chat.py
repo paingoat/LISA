@@ -163,8 +163,8 @@ def main(args):
         conv = conversation_lib.conv_templates[args.conv_type].copy()
         conv.messages = []
 
-        prompt = input("Please input your prompt: ")
-        prompt = DEFAULT_IMAGE_TOKEN + "\n" + prompt
+        user_prompt = input("Please input your prompt: ")
+        prompt = DEFAULT_IMAGE_TOKEN + "\n" + user_prompt
         if args.use_mm_start_end:
             replace_token = (
                 DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
@@ -232,11 +232,14 @@ def main(args):
         text_output = text_output.replace("\n", "").replace("  ", " ")
         print("text_output: ", text_output)
 
-        run_dir, _ = save_segmentation_run(
-            args.vis_save_path, image_path, image_np, pred_masks
+        save_segmentation_run(
+            args.vis_save_path,
+            image_path,
+            image_np,
+            pred_masks,
+            prompt=user_prompt,
+            text_output=text_output,
         )
-        if run_dir is None:
-            print("No segmentation mask to save.")
 
 
 if __name__ == "__main__":

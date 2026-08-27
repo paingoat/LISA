@@ -306,7 +306,12 @@ def inference(input_str, input_image):
 
     print("text_output: ", text_output)
     _, save_img = save_segmentation_run(
-        args.vis_save_path, input_image, image_np, pred_masks
+        args.vis_save_path,
+        input_image,
+        image_np,
+        pred_masks,
+        prompt=input_str,
+        text_output=text_output,
     )
 
     output_str = "ASSITANT: " + text_output  # input_str
