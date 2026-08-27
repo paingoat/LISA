@@ -173,23 +173,53 @@ model.eval()
 
 
 # Gradio
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+_IMGS_DIR = os.path.join(_REPO_ROOT, "imgs")
+
+
+def _placeholder_rgb(message="No output"):
+    img = np.full((256, 256, 3), 40, dtype=np.uint8)
+    cv2.putText(
+        img,
+        message,
+        (16, 128),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (220, 220, 220),
+        1,
+        cv2.LINE_AA,
+    )
+    return img
+
+
+def _load_rgb(path):
+    img = cv2.imread(path)
+    if img is None:
+        return None
+    return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+
 examples = [
-    [
-        "Where can the driver see the car speed in this image? Please output segmentation mask.",
-        "./resources/imgs/example1.jpg",
-    ],
-    [
-        "Can you segment the food that tastes spicy and hot?",
-        "./resources/imgs/example2.jpg",
-    ],
-    [
-        "Assuming you are an autonomous driving robot, what part of the diagram would you manipulate to control the direction of travel? Please output segmentation mask and explain why.",
-        "./resources/imgs/example1.jpg",
-    ],
-    [
-        "What can make the woman stand higher? Please output segmentation mask and explain why.",
-        "./resources/imgs/example3.jpg",
-    ],
+    pair
+    for pair in [
+        [
+            "Can you segment the character in this image? Please output segmentation mask.",
+            os.path.join(_IMGS_DIR, "anime.png"),
+        ],
+        [
+            "Can you segment the knight in this image? Please output segmentation mask.",
+            os.path.join(_IMGS_DIR, "knight.png"),
+        ],
+        [
+            "Can you segment the unusual part in this image? Please output segmentation mask and explain why.",
+            os.path.join(_IMGS_DIR, "hollow.png"),
+        ],
+        [
+            "Can you segment the person in this image? Please output segmentation mask.",
+            os.path.join(_IMGS_DIR, "viking.png"),
+        ],
+    ]
+    if os.path.isfile(pair[1])
 ]
 output_labels = ["Segmentation Output"]
 
@@ -233,7 +263,9 @@ def inference(input_str, input_image):
         output_str = "[Error] Invalid input: ", input_str
         # output_image = np.zeros((128, 128, 3))
         ## error happened
-        output_image = cv2.imread("./resources/error_happened.png")[:, :, ::-1]
+        output_image = _load_rgb(os.path.join(_REPO_ROOT, "resources", "error_happened.png"))
+        if output_image is None:
+            output_image = _placeholder_rgb("Invalid input")
         return output_image, output_str
 
     # Model Inference
@@ -318,8 +350,9 @@ def inference(input_str, input_image):
     if save_img is not None:
         output_image = save_img  # input_image
     else:
-        ## no seg output
-        output_image = cv2.imread("./resources/no_seg_out.png")[:, :, ::-1]
+        output_image = _load_rgb(os.path.join(_REPO_ROOT, "resources", "no_seg_out.png"))
+        if output_image is None:
+            output_image = _placeholder_rgb("No segmentation")
     return output_image, output_str
 
 
@@ -336,7 +369,7 @@ demo = gr.Interface(
     title=title,
     description=description,
     article=article,
-    examples=examples,
+    examples=examples or None,
     allow_flagging="auto",
 )
 
