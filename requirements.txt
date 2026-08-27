@@ -14,6 +14,8 @@ tokenizers==0.13.3
 # transformers 4.31 allows huggingface-hub<1.0, which now resolves to 0.26+
 # and removes cached_download. Pin a Hub client from the 4.31 era.
 huggingface-hub>=0.19.4,<0.23.0
+# Faster Hub downloads when HF_HUB_ENABLE_HF_TRANSFER=1 in .env
+hf_transfer>=0.1.4,<0.2.0
 # Required by from_pretrained(..., low_cpu_mem_usage=True) in chat.py.
 # Also keeps peak CPU RAM down when loading the ~54 GB fp32 LISA shards.
 accelerate==0.21.0
