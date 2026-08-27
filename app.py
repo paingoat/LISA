@@ -7,6 +7,14 @@ from utils.hf_env import load_runtime_env
 
 load_runtime_env()
 
+try:
+    import pkg_resources  # noqa: F401  # Gradio 3.39 routes.py
+except ImportError as exc:
+    raise RuntimeError(
+        "Gradio 3.39 needs setuptools with pkg_resources (setuptools 82+ removed it). "
+        "Run: pip install 'setuptools==80.10.2'"
+    ) from exc
+
 import bleach
 import cv2
 import gradio as gr
