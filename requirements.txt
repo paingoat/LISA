@@ -33,9 +33,12 @@ Pillow==9.4.0
 pycocotools==2.0.6
 
 # Gradio 3.39 / FastAPI 0.100 require Pydantic v1.
+# Do not let pip pull a current gradio_client: 1.x/2.x removed serializing.py
+# which Gradio 3.39 still imports.
 pydantic>=1.10.13,<2.0.0
 fastapi==0.100.1
 gradio==3.39.0
+gradio_client==0.3.0
 bleach>=6.0.0,<7.0.0
 markdown2==2.4.10
 openai==0.27.8
