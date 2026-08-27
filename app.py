@@ -22,6 +22,7 @@ from model.llava.mm_utils import tokenizer_image_token
 from model.segment_anything.utils.transforms import ResizeLongestSide
 from utils.utils import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
                          DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
+from utils.vis_save import save_segmentation_run
 
 
 def parse_args(args):
@@ -30,7 +31,7 @@ def parse_args(args):
     parser.add_argument("--vis_save_path", default="./vis_output", type=str)
     parser.add_argument(
         "--precision",
-        default="fp16",
+        default="bf16",
         type=str,
         choices=["fp32", "bf16", "fp16"],
         help="precision for inference",
@@ -50,6 +51,25 @@ def parse_args(args):
         default="llava_v1",
         type=str,
         choices=["llava_v1", "llava_llama_2"],
+    )
+    parser.add_argument(
+        "--server_name",
+        default="0.0.0.0",
+        type=str,
+        help="bind address; 0.0.0.0 so RunPod/HTTP proxy can reach Gradio",
+    )
+    parser.add_argument("--port", default=7860, type=int)
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        default=True,
+        help="create a public Gradio URL (*.gradio.live)",
+    )
+    parser.add_argument(
+        "--no-share",
+        dest="share",
+        action="store_false",
+        help="disable the public Gradio tunnel",
     )
     return parser.parse_args(args)
 
@@ -137,18 +157,9 @@ if args.precision == "bf16":
 elif (
     args.precision == "fp16" and (not args.load_in_4bit) and (not args.load_in_8bit)
 ):
-    vision_tower = model.get_model().get_vision_tower()
-    model.model.vision_tower = None
-    import deepspeed
-
-    model_engine = deepspeed.init_inference(
-        model=model,
-        dtype=torch.half,
-        replace_with_kernel_inject=True,
-        replace_method="auto",
-    )
-    model = model_engine.module
-    model.model.vision_tower = vision_tower.half().cuda()
+    # Same eager cast as bf16. Original DeepSpeed kernel inject is not
+    # required for chat-equivalent quality and needs an extra package.
+    model = model.half().cuda()
 elif args.precision == "fp32":
     model = model.float().cuda()
 
@@ -190,7 +201,7 @@ This is the online demo of LISA. \n
 If multiple users are using it at the same time, they will enter a queue, which may delay some time. \n
 **Note**: **Different prompts can lead to significantly varied results**. \n
 **Note**: Please try to **standardize** your input text prompts to **avoid ambiguity**, and also pay attention to whether the **punctuations** of the input are correct. \n
-**Note**: Current model is **LISA-13B-llama2-v0-explanatory**, and 4-bit quantization may impair text-generation quality. \n
+**Note**: Default checkpoint is **LISA-13B-llama2-v1** in bf16 (same as `chat.py`). \n
 **Usage**: <br>
 &ensp;(1) To let LISA **segment something**, input prompt like: "Can you segment xxx in this image?", "What is xxx in this image? Please output segmentation mask."; <br>
 &ensp;(2) To let LISA **output an explanation**, input prompt like: "What is xxx in this image? Please output segmentation mask and explain why."; <br>
@@ -294,19 +305,9 @@ def inference(input_str, input_image):
     text_output = text_output.split("ASSISTANT: ")[-1]
 
     print("text_output: ", text_output)
-    save_img = None
-    for i, pred_mask in enumerate(pred_masks):
-        if pred_mask.shape[0] == 0:
-            continue
-
-        pred_mask = pred_mask.detach().cpu().numpy()[0]
-        pred_mask = pred_mask > 0
-
-        save_img = image_np.copy()
-        save_img[pred_mask] = (
-            image_np * 0.5
-            + pred_mask[:, :, None].astype(np.uint8) * np.array([255, 0, 0]) * 0.5
-        )[pred_mask]
+    _, save_img = save_segmentation_run(
+        args.vis_save_path, input_image, image_np, pred_masks
+    )
 
     output_str = "ASSITANT: " + text_output  # input_str
     if save_img is not None:
@@ -335,4 +336,9 @@ demo = gr.Interface(
 )
 
 demo.queue()
-demo.launch()
+demo.launch(
+    server_name=args.server_name,
+    server_port=args.port,
+    share=args.share,
+    inbrowser=False,
+)

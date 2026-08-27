@@ -304,11 +304,15 @@ The results should be like:
 <p align="center"> <img src="imgs/example1.jpg" width="22%"> <img src="vis_output/example1_masked_img_0.jpg" width="22%"> <img src="imgs/example2.jpg" width="25%"> <img src="vis_output/example2_masked_img_0.jpg" width="25%"> </p>
 
 ## Deployment
+
+Same 13B bf16 path as `chat.py` (no 4-bit / bitsandbytes). Gradio binds `0.0.0.0:7860` and opens a public `*.gradio.live` URL (`--share`). Stop `chat.py` first so the A40 has enough VRAM.
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python app.py --version='xinlai/LISA-13B-llama2-v1' --precision='bf16'
+CUDA_VISIBLE_DEVICES=0 python app.py --version='xinlai/LISA-13B-llama2-v1-explanatory' --precision='bf16'
 ```
-CUDA_VISIBLE_DEVICES=0 python app.py --version='xinlai/LISA-13B-llama2-v1 --load_in_4bit'
-CUDA_VISIBLE_DEVICES=0 python app.py --version='xinlai/LISA-13B-llama2-v1-explanatory --load_in_4bit'
-```
-By default, we use 4-bit quantization. Feel free to delete the `--load_in_4bit` argument for 16-bit inference or replace it with `--load_in_8bit` argument for 8-bit inference.
+
+On RunPod you can also map HTTP service port **7860**. Disable the Gradio tunnel with `--no-share` if you only want the pod URL.
 
 
 ## Dataset
